@@ -354,6 +354,7 @@ Update this checklist as each stage is completed and verified.
 
 Possible extensions after the keystroke-only version include:
 
+
 - Mouse movement speed, distance, and direction-change features
 - Scroll velocity and direction patterns
 - Page dwell time and navigation transitions
