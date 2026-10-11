@@ -1,0 +1,11 @@
+{
+  "roc_auc": 0.9999847750865053,
+  "tpr_detection_rate": 1.0,
+  "fpr_false_alarm_rate": 0.047254901960784315,
+  "threshold": 0.1584707647562027,
+  "normal_error_mean": 0.05916441231966019,
+  "normal_error_std": 0.08031349629163742,
+  "anomaly_error_mean": 25.237398147583008,
+  "anomaly_error_std": 21.115144729614258,
+  "error_separation_ratio": 426.556640625
+}

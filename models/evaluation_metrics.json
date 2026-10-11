@@ -1,0 +1,88 @@
+{
+  "best_classical_model": "Random Forest",
+  "classical_models_comparison": [
+    {
+      "Model": "PyTorch Neural Network",
+      "Accuracy": 0.8635294117647059,
+      "Precision (Macro)": 0.8704416274494587,
+      "Recall (Macro)": 0.863529411764706,
+      "F1-Score (Macro)": 0.8597649850065143
+    },
+    {
+      "Model": "Random Forest",
+      "Accuracy": 0.8325490196078431,
+      "Precision (Macro)": 0.8429389077443492,
+      "Recall (Macro)": 0.8325490196078433,
+      "F1-Score (Macro)": 0.8246486082811377
+    },
+    {
+      "Model": "Support Vector Machine",
+      "Accuracy": 0.8015686274509803,
+      "Precision (Macro)": 0.8096617849044858,
+      "Recall (Macro)": 0.8015686274509803,
+      "F1-Score (Macro)": 0.7931207612742761
+    },
+    {
+      "Model": "K-Nearest Neighbors",
+      "Accuracy": 0.777843137254902,
+      "Precision (Macro)": 0.7788385179695293,
+      "Recall (Macro)": 0.777843137254902,
+      "F1-Score (Macro)": 0.7665089942043837
+    },
+    {
+      "Model": "Logistic Regression",
+      "Accuracy": 0.7725490196078432,
+      "Precision (Macro)": 0.7813904772768459,
+      "Recall (Macro)": 0.772549019607843,
+      "F1-Score (Macro)": 0.7651429383603386
+    },
+    {
+      "Model": "Decision Tree",
+      "Accuracy": 0.5882352941176471,
+      "Precision (Macro)": 0.648202765681451,
+      "Recall (Macro)": 0.588235294117647,
+      "F1-Score (Macro)": 0.5911768635327466
+    }
+  ],
+  "best_classical_metrics": {
+    "accuracy": 0.8325490196078431,
+    "precision_macro": 0.8429389077443492,
+    "recall_macro": 0.8325490196078433,
+    "f1_macro": 0.8246486082811377
+  },
+  "pytorch_neural_network_metrics": {
+    "accuracy": 0.8635294117647059,
+    "precision_macro": 0.8704416274494587,
+    "recall_macro": 0.863529411764706,
+    "f1_macro": 0.8597649850065143
+  },
+  "autoencoder_anomaly_metrics": {
+    "roc_auc": 0.9999847750865053,
+    "tpr_detection_rate": 1.0,
+    "fpr_false_alarm_rate": 0.047254901960784315,
+    "threshold": 0.1584707647562027,
+    "normal_error_mean": 0.05916441231966019,
+    "normal_error_std": 0.08031349629163742,
+    "anomaly_error_mean": 25.237398147583008,
+    "anomaly_error_std": 21.115144729614258,
+    "error_separation_ratio": 426.556640625
+  },
+  "split_strategy": {
+    "type": "Session-Based Split (Zero Session Leakage)",
+    "train_sessions": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "test_sessions": [
+      7,
+      8
+    ],
+    "train_samples": 15300,
+    "test_samples": 5100,
+    "num_classes": 51
+  }
+}

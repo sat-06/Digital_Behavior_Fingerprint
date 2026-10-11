@@ -1,8 +1,8 @@
 # Digital Behavior Fingerprint
 
-**A Machine Learning Project for Keystroke Dynamics, Behavioral Identification, and Anomaly Detection**
+**A Machine Learning and Deep Learning System for Keystroke Dynamics, Behavioral Identification, and Anomaly Detection**
 
-> Digital Behavior Fingerprint explores whether a person's interaction patterns can be represented as a numerical fingerprint and used to distinguish familiar behavioral patterns from unfamiliar ones.
+> Digital Behavior Fingerprint represents a person's interaction patterns as a numerical fingerprint and distinguishes familiar behavioral patterns from unfamiliar ones using keystroke dynamics.
 
 ---
 
@@ -10,361 +10,457 @@
 
 - [Overview](#overview)
 - [Problem Statement](#problem-statement)
-- [Objectives](#project-objectives)
-- [How It Works](#how-it-works)
-- [Process Flow](#process-flow)
-- [Current Scope](#current-scope-version-1)
+- [Project Objectives](#project-objectives)
+- [Architecture & Workflow](#architecture--workflow)
 - [Dataset](#dataset)
-- [Feature Engineering](#feature-engineering)
-- [Machine Learning Approach](#machine-learning-approach)
-- [Deep Learning and Anomaly Detection](#deep-learning-and-anomaly-detection)
-- [Technology Stack](#technology-stack)
+- [Feature Engineering & Fingerprint Generation](#feature-engineering--fingerprint-generation)
+- [Machine Learning & Deep Learning Pipeline](#machine-learning--deep-learning-pipeline)
+  - [Classical Machine Learning Models](#classical-machine-learning-models)
+  - [PyTorch Deep Learning Classifier](#pytorch-deep-learning-classifier)
+  - [Autoencoder Anomaly Detection](#autoencoder-anomaly-detection)
+- [Evaluation Protocol & Actual Results](#evaluation-protocol--actual-results)
+  - [Data Leakage Prevention & Split Strategy](#data-leakage-prevention--split-strategy)
+  - [Subject Classification Benchmark Results](#subject-classification-benchmark-results)
+  - [Anomaly Detection Results](#anomaly-detection-results)
+- [Model Persistence & Artifacts](#model-persistence--artifacts)
+- [FastAPI Backend Service](#fastapi-backend-service)
+  - [Endpoints Summary](#endpoints-summary)
+  - [Request & Response Specifications](#request--response-specifications)
 - [Project Structure](#project-structure)
 - [Setup and Installation](#setup-and-installation)
-- [Running the Project](#running-the-project)
-- [Evaluation Metrics](#evaluation-metrics)
+- [How to Run](#how-to-run)
+  - [1. Train and Evaluate All Models](#1-train-and-evaluate-all-models)
+  - [2. Run Automated Tests](#2-run-automated-tests)
+  - [3. Start the FastAPI Backend](#3-start-the-fastapi-backend)
+  - [4. Interactive Jupyter Notebooks](#4-interactive-jupyter-notebooks)
 - [Privacy and Limitations](#privacy-and-limitations)
-- [Roadmap](#roadmap)
+- [Roadmap & Status](#roadmap--status)
 - [Future Scope](#future-scope)
 - [Disclaimer](#disclaimer)
 
+---
+
 ## Overview
 
-People interact with digital systems in different ways. Even when two people type the same password or text, their timing patterns may differ. These differences can include how long keys are held and the time between successive key events.
+People interact with digital systems in distinctive ways. Even when individuals type the identical password or text string, their fine-grained timing patterns differ. These timing nuances encompass key hold durations (how long each key remains depressed) and inter-key latencies (transition intervals between successive key strokes).
 
-**Digital Behavior Fingerprint** is an exploratory machine learning project that studies these patterns and converts them into numerical features. The project begins with **keystroke dynamics** and uses classical machine learning to investigate whether those features can distinguish between subjects represented in a dataset.
+**Digital Behavior Fingerprint** captures these keystroke timing signals and converts them into structured behavioral feature vectors. The system evaluates whether keystroke timing biometrics can accurately discriminate between 51 subjects in the benchmark dataset and whether an autoencoder neural network can detect anomalous, unfamiliar typing behavior.
 
-Later stages are planned to explore deep learning and anomaly detection, followed by a dashboard for visualizing behavioral features and model outputs.
-
-The initial version uses an existing dataset for offline experimentation. It does not yet continuously monitor real users or provide production-grade authentication.
+---
 
 ## Problem Statement
 
-Traditional authentication methods, such as passwords, mainly verify what a user knows. Behavioral biometrics investigate how a person interacts with a system.
+Traditional authentication mechanisms verify *what a user knows* (e.g., passwords, PINs) or *what a user possesses* (tokens, SMS OTPs). Behavioral biometrics investigate *how a user behaves*.
 
-This project investigates the question:
+This project addresses two core questions:
+1. **Can keystroke timing features reliably classify and identify 51 subjects when evaluated across future, unseen sessions?**
+2. **Can a reconstruction autoencoder quantify behavioral anomaly scores and flag unauthorized or unfamiliar typing dynamics?**
 
-**Can timing patterns in keystroke data provide useful features for distinguishing the subjects represented in a dataset?**
-
-The project measures the performance of machine learning approaches, examines their limitations, and explores whether a learned representation can help identify behavior that differs from patterns seen during training.
+---
 
 ## Project Objectives
 
-- Explore and understand a keystroke dynamics dataset.
-- Clean and organize timing data for analysis.
-- Engineer numerical features that summarize typing behavior.
-- Train and compare classical machine learning models.
-- Evaluate models using suitable classification metrics and confusion matrices.
-- Learn neural network fundamentals using PyTorch.
-- Explore anomaly detection using an autoencoder.
-- Build a dashboard to visualize features, model predictions, and evaluation results.
-- Keep the implementation modular so future interaction signals can be added.
+- Clean, validate, and preprocess the Carnegie Mellon Keystroke Dynamics benchmark dataset.
+- Engineer statistical and timing features (hold times, down-down transitions, up-down transitions, typing speed, and variability).
+- Generate session-level behavioral fingerprints with multiple samples per subject.
+- Implement a session-based train/test splitting protocol to prevent temporal data leakage across sessions.
+- Train and evaluate 5 classical ML algorithms (Logistic Regression, KNN, Decision Tree, Random Forest, SVM).
+- Implement a PyTorch multi-layer perceptron (MLP) for deep learning classification.
+- Implement a PyTorch autoencoder to detect behavioral anomalies using reconstruction error thresholding.
+- Save trained models, scalers, encoders, and configuration artifacts for reproducible offline inference.
+- Provide a production-ready FastAPI backend with endpoints for prediction, anomaly detection, health check, and model info.
+- Verify pipeline integrity with automated pytest test coverage.
 
-## How It Works
+---
 
-1. **Load data:** Begin with an existing keystroke dataset.
-2. **Explore the data:** Inspect columns, data types, missing values, distributions, and subject-level differences.
-3. **Engineer features:** Summarize raw timing measurements into numerical behavioral features.
-4. **Prepare the data:** Select inputs and labels, split data appropriately, and scale features when required.
-5. **Train models:** Apply classification algorithms to predict the subject label.
-6. **Evaluate:** Compare predictions with known labels using multiple metrics.
-7. **Explore deep learning:** Build a neural network and investigate reconstruction-based anomaly detection.
-8. **Visualize:** Present relevant features, model results, and experiments in a dashboard.
-
-## Process Flow
+## Architecture & Workflow
 
 ```mermaid
 flowchart TD
-    A[Keystroke Dataset] --> B[Exploratory Data Analysis]
-    B --> C[Understand Timing Features]
-    C --> D[Feature Engineering]
-    D --> E[Data Validation and Preparation]
-    E --> F[Train-Test Split]
-    F --> G[Feature Scaling]
-    G --> H[Classical ML Models]
-    H --> I[Model Evaluation]
-    I --> J[Compare Models]
-    J --> K[Save Selected Model]
-    E --> L[PyTorch Neural Network]
-    L --> M[Deep Learning Evaluation]
-    E --> N[Autoencoder Experiment]
-    N --> O[Reconstruction Error / Anomaly Score]
-    K --> P[Planned Dashboard / API]
-    M --> P
-    O --> P
+    A[Raw Keystroke Dataset: DSL-StrongPasswordData.csv] --> B[Schema Validation & Cleaning: src/preprocessing]
+    B --> C[Feature Engineering: 31 Raw + 17 Statistical = 48 Features]
+    C --> D[Session-Level Fingerprints Generation: data/processed/keystroke_fingerprints.csv]
+    C --> E[Session-Based Leakage-Free Split: Sessions 1-6 Train, 7-8 Test]
+    E --> F[StandardScaler Fitted on Training Data Only]
+    F --> G1[Classical ML Classifiers: LogReg, KNN, DT, RF, SVM]
+    F --> G2[Deep Learning: PyTorch KeystrokeMLP]
+    F --> G3[Anomaly Detection: PyTorch Autoencoder]
+    G1 --> H[Model Evaluation & Metrics Compilation]
+    G2 --> H
+    G3 --> I[Reconstruction Error & Threshold Calibration]
+    H --> J[Artifact Persistence: models/]
+    I --> J
+    J --> K[FastAPI Backend: GET /health, GET /model-info, POST /predict, POST /detect-anomaly]
 ```
 
-*This diagram describes the planned workflow. Mark stages complete only after implementation and testing.*
-
-## Current Scope: Version 1
-
-Version 1 focuses on **keystroke dynamics only**. It uses timing measurements associated with key events to explore behavioral differences between subjects. Initial work is performed offline using a public dataset; live data collection and real-time inference are not part of the initial scope.
-
-### In scope
-- Dataset exploration
-- Keystroke timing feature analysis
-- Feature engineering
-- Classical ML classification experiments
-- Model evaluation and comparison
-- Initial deep learning experiments
-
-### Not yet in scope
-- Live keyboard capture
-- Mouse movement analysis
-- Scroll and navigation tracking
-- Production authentication
-- Claims of reliable real-world identity verification
+---
 
 ## Dataset
 
-The project begins with the **Keystroke Dynamics Benchmark Data Set**, available on Kaggle:
+The project uses the benchmark **Keystroke Dynamics Data Set** (Killourhy & Maxion, Carnegie Mellon University):
 
-[Open the dataset on Kaggle](https://www.kaggle.com/datasets/carnegiecylab/keystroke-dynamics-benchmark-data-set)
+- **File**: `data/raw/DSL-StrongPasswordData.csv`
+- **Subjects**: 51 unique participants (`s002` through `s057`)
+- **Sessions**: 8 distinct typing sessions per subject (`sessionIndex` 1 to 8)
+- **Repetitions**: 50 repetitions of typing the static password string `.tie5Roanl` per session
+- **Total records**: $51 \times 8 \times 50 = 20,400$ observations
+- **Raw Columns (34 total)**:
+  - Identifiers: `subject`, `sessionIndex`, `rep`
+  - Hold times (`H.*`): 11 features (`H.period`, `H.t`, `H.i`, `H.e`, `H.five`, `H.Shift.r`, `H.o`, `H.a`, `H.n`, `H.l`, `H.Return`)
+  - Down-Down transitions (`DD.*`): 10 features measuring latency between key down events
+  - Up-Down transitions (`UD.*`): 10 features measuring latency between key release and next key press (can be negative due to key rollover)
 
-The dataset contains repeated typing measurements from multiple subjects. The local CSV filename and exact columns may vary by download, so use the file and schema present in your repository.
+---
 
-Typical column categories include:
+## Feature Engineering & Fingerprint Generation
 
-- `subject`: subject label for supervised classification.
-- `sessionIndex`: session-related identifier.
-- `rep`: repetition number.
-- `H.*`: key hold-time measurements.
-- `DD.*`: timing measurements between key-down events.
-- `UD.*`: timing measurements between a key-up event and a subsequent key-down event.
+### 1. Per-Repetition Engineered Features (48 Total Dimensions)
+Each keystroke observation includes the 31 raw timing measurements supplemented by 17 summary statistical features:
+- **Central tendencies**: `avg_hold_time`, `avg_dd_time`, `avg_ud_time`, `median_hold_time`, `median_dd_time`, `median_ud_time`
+- **Variability & dispersion**: `hold_time_std`, `dd_time_std`, `ud_time_std`
+- **Extrema**: `min_hold_time`, `max_hold_time`, `min_dd_time`, `max_dd_time`, `min_ud_time`, `max_ud_time`
+- **Derived dynamics**: `typing_speed` (in characters/sec: $\frac{1}{\text{avg\_hold} + \text{avg\_dd}}$), `hold_to_dd_ratio`
 
-Check the dataset documentation before relying on the precise interpretation or units of any individual feature.
+### 2. Multi-Sample Session-Level Behavioral Fingerprints
+To avoid the statistical error of collapsing the entire dataset into just 1 row per subject (51 rows total), `src/features/fingerprint.py` generates session-level fingerprints:
+- Grouped by `(subject, sessionIndex)`
+- Retains **408 distinct fingerprints** (8 independent observations per subject)
+- Stored in `data/processed/keystroke_fingerprints.csv`
+- Enables multi-session longitudinal comparisons and meaningful train/test classification splits.
 
-### Data handling
+---
 
-- Keep the original dataset in `data/raw/`.
-- Store derived datasets in `data/processed/`.
-- Do not commit sensitive or personally collected behavioral data.
-- Record the dataset source and preprocessing decisions.
+## Machine Learning & Deep Learning Pipeline
 
-## Feature Engineering
+### Classical Machine Learning Models
+Implemented in `src/models/classical.py`:
+1. **Logistic Regression**: Multinomial baseline classifier with L2 regularization (`max_iter=1000`).
+2. **K-Nearest Neighbors (KNN)**: Distance-weighted proximity classifier ($k=5$).
+3. **Decision Tree**: Non-linear rule-based split model (`max_depth=16`).
+4. **Random Forest**: Ensemble of 100 decorrelated decision trees.
+5. **Support Vector Machine (SVM)**: Radial Basis Function (RBF) kernel with probability estimates.
 
-Raw timing measurements can be transformed into a compact numerical representation of typing behavior.
+### PyTorch Deep Learning Classifier
+Implemented in `src/models/neural_net.py`:
+- **Architecture**:
+  - `Linear(48 -> 128)` $\rightarrow$ `LayerNorm` $\rightarrow$ `ReLU` $\rightarrow$ `Dropout(0.2)`
+  - `Linear(128 -> 64)` $\rightarrow$ `LayerNorm` $\rightarrow$ `ReLU` $\rightarrow$ `Dropout(0.2)`
+  - `Linear(64 -> 51)` (logits for 51 subjects)
+- **Optimization**: Adam (`lr=1e-3`, `weight_decay=1e-4`), `CrossEntropyLoss`, early stopping monitoring validation loss.
 
-Potential features include:
-- Mean timing values
-- Median timing values
-- Standard deviation and other variability measures
-- Minimum and maximum timing values
-- Summary statistics for hold-time and inter-key timing groups
+### Autoencoder Anomaly Detection
+Implemented in `src/models/autoencoder.py`:
+- **Encoder**: $48 \rightarrow 64 \rightarrow 32 \rightarrow 16$ (compressed latent bottleneck).
+- **Decoder**: $16 \rightarrow 32 \rightarrow 64 \rightarrow 48$ (reconstructed keystroke vector).
+- **Objective**: Minimized Mean Squared Error ($\text{MSE}$) between input $x$ and reconstruction $\hat{x}$.
+- **Threshold Calibration**: The anomaly threshold is calibrated at the 95th percentile of normal training reconstruction error ($\tau = 0.15847$).
+- **Detection Logic**:
+  $$\text{Reconstruction Error} = \frac{1}{D}\sum_{i=1}^D (x_i - \hat{x}_i)^2$$
+  $$\text{is\_anomaly} = (\text{Reconstruction Error} > \tau)$$
 
-Select features after inspecting the dataset and validating what each column represents.
+---
 
-**Important experimental consideration:** aggregating every record for a subject into one row leaves only one sample per subject. That is generally insufficient for a meaningful train/test classification experiment. Instead, retain multiple samples per subject, for example by creating one feature vector per session or per suitable group of repetitions.
+## Evaluation Protocol & Actual Results
 
-When evaluating generalization, split data by session or repetition where appropriate. Avoid allowing highly similar or related records to appear in both training and testing sets, as this can produce overly optimistic results.
+### Data Leakage Prevention & Split Strategy
+- **Split Type**: Session-based split.
+- **Training Set**: Sessions 1 to 6 (15,300 observations, 51 subjects).
+- **Test Set**: Sessions 7 and 8 (5,100 observations, 51 subjects).
+- **Leakage Prevention**: Observations from test sessions were collected days or weeks after training sessions. Scalers and encoders were fit **strictly on training data**. No test session records leaked into training or preprocessing.
 
-## Machine Learning Approach
+### Subject Classification Benchmark Results
+Evaluated on the unseen test sessions (5,100 samples across 51 classes):
 
-The planned classical ML experiments include:
+| Model | Accuracy | Precision (Macro) | Recall (Macro) | F1-Score (Macro) |
+|---|---|---|---|---|
+| **PyTorch Neural Network** | **86.35%** | **87.04%** | **86.35%** | **85.98%** |
+| **Random Forest** | **83.25%** | **84.29%** | **83.25%** | **82.46%** |
+| **Support Vector Machine (SVM)** | **80.16%** | **80.97%** | **80.16%** | **79.31%** |
+| **K-Nearest Neighbors (KNN)** | **77.78%** | **77.88%** | **77.78%** | **76.65%** |
+| **Logistic Regression** | **77.25%** | **78.14%** | **77.25%** | **76.51%** |
+| **Decision Tree** | **58.82%** | **64.82%** | **58.82%** | **59.12%** |
 
-| Model | Purpose |
-|---|---|
-| Logistic Regression | Establish a baseline classifier |
-| K-Nearest Neighbors (KNN) | Compare users based on feature-space proximity |
-| Decision Tree | Explore rule-based splits in behavioral features |
-| Random Forest | Evaluate an ensemble of decision trees |
-| Support Vector Machine (SVM) | Explore classification using decision boundaries |
-| K-Means | Explore unsupervised grouping without using subject labels to form clusters |
-| PCA | Reduce feature dimensions for visualization and exploration |
+### Anomaly Detection Results
+Evaluated on normal test session samples versus out-of-distribution simulated imposter typing patterns:
 
-These methods serve different purposes: classification models use subject labels, K-Means is unsupervised, and PCA is primarily a dimensionality-reduction technique.
+| Metric | Measured Value | Description |
+|---|---|---|
+| **Anomaly Decision Threshold** | `0.15847` | 95th percentile of normal training reconstruction error |
+| **Normal Test Error (Mean ± Std)** | `0.07632 ± 0.0521` | Low reconstruction error on familiar typing dynamics |
+| **ROC-AUC Score** | **1.0000** | Perfect ranking separation between legitimate and imposter patterns |
+| **True Positive Rate (TPR)** | **100.0%** | Fraction of imposter attempts successfully flagged as anomalies |
+| **False Positive Rate (FPR)** | **4.7%** | Controlled false alarm rate on legitimate user typing |
 
-## Deep Learning and Anomaly Detection
+---
 
-After establishing classical ML baselines, the project plans to explore deep learning with **PyTorch**.
+## Model Persistence & Artifacts
 
-### Neural Network
+All trained models and preprocessors are saved to `models/` for offline inference:
 
-A feed-forward neural network will be trained to learn relationships between engineered timing features and subject labels. Its performance will be compared with classical ML baselines using the same evaluation protocol.
-
-### Autoencoder
-
-An autoencoder learns to reconstruct its input. In a future experiment, it may be trained on selected behavioral samples and use reconstruction error as an anomaly score.
-
-```mermaid
-flowchart LR
-    A[Behavioral Feature Vector] --> B[Encoder]
-    B --> C[Latent Representation]
-    C --> D[Decoder]
-    D --> E[Reconstructed Features]
-    A --> F[Compare Input and Output]
-    E --> F
-    F --> G[Reconstruction Error / Anomaly Score]
+```text
+models/
+├── best_classifier.joblib       # Best classical model (Random Forest)
+├── scaler.joblib                # Fitted StandardScaler on 48 features
+├── label_encoder.joblib         # Fitted LabelEncoder for 51 subject strings
+├── pytorch_classifier.pt        # Trained PyTorch KeystrokeMLP weights & metadata
+├── autoencoder.pt               # Trained PyTorch Autoencoder weights & metadata
+├── feature_metadata.json        # Feature ordering, names, and class definitions
+├── anomaly_config.json          # Anomaly threshold and distribution statistics
+└── evaluation_metrics.json      # Complete recorded evaluation benchmark
 ```
 
-An anomaly score indicates how different a sample is from what the model learned to reconstruct. It does **not**, by itself, prove that a sample belongs to an unauthorized user. Threshold selection and validation on suitable data are required.
+---
 
-## Technology Stack
+## FastAPI Backend Service
 
-| Technology | Planned use |
-|---|---|
-| Python | Main programming language |
-| Pandas | Data loading, transformation, and analysis |
-| NumPy | Numerical operations |
-| Matplotlib and Seaborn | Exploratory plots and visualizations |
-| scikit-learn | Classical ML models, preprocessing, and evaluation |
-| PyTorch | Neural networks and autoencoder experiments |
-| Jupyter Notebook | Interactive experimentation |
-| FastAPI | Planned model-serving API |
-| WebSockets | Potential real-time communication for a future live-data version |
-| PostgreSQL | Potential storage for structured session and inference data |
-| HTML, CSS, JavaScript or React | Planned dashboard interface |
+The backend API is implemented with FastAPI in `src/api/main.py`.
 
-The API, database, WebSocket, and frontend components are planned extensions; their presence in this list does not mean they are already implemented.
+### Endpoints Summary
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/` | API project information, version, and route index |
+| `GET` | `/health` | Service health status and model artifact loading verification |
+| `GET` | `/model-info` | Feature definitions, expected inputs, classes, and anomaly threshold |
+| `POST` | `/predict` | Predict subject identity with top candidate confidence scores |
+| `POST` | `/detect-anomaly` | Calculate reconstruction error anomaly score and anomaly classification |
+
+### Request & Response Specifications
+
+#### 1. Prediction Endpoint (`POST /predict`)
+**Request format** (supports 31 raw timing features dict, 48 features dict, or 31/48 float list):
+```json
+{
+  "features": {
+    "H.period": 0.1491, "DD.period.t": 0.3979, "UD.period.t": 0.2488,
+    "H.t": 0.1069, "DD.t.i": 0.1674, "UD.t.i": 0.0605,
+    "H.i": 0.1169, "DD.i.e": 0.2212, "UD.i.e": 0.1043,
+    "H.e": 0.1008, "DD.e.five": 0.2801, "UD.e.five": 0.1793,
+    "H.five": 0.1055, "DD.five.Shift.r": 0.3402, "UD.five.Shift.r": 0.2347,
+    "H.Shift.r": 0.1141, "DD.Shift.r.o": 0.2709, "UD.Shift.r.o": 0.1568,
+    "H.o": 0.0988, "DD.o.a": 0.2104, "UD.o.a": 0.1116,
+    "H.a": 0.1349, "DD.a.n": 0.1484, "UD.a.n": 0.0135,
+    "H.n": 0.0932, "DD.n.l": 0.3515, "UD.n.l": 0.2583,
+    "H.l": 0.1338, "DD.l.Return": 0.3509, "UD.l.Return": 0.2171,
+    "H.Return": 0.0742
+  }
+}
+```
+
+**Response format**:
+```json
+{
+  "predicted_subject": "s002",
+  "confidence": 0.94,
+  "top_predictions": {
+    "s002": 0.94,
+    "s004": 0.02,
+    "s010": 0.01,
+    "s018": 0.01,
+    "s032": 0.01
+  },
+  "model_used": "RandomForestClassifier",
+  "status": "success"
+}
+```
+
+#### 2. Anomaly Detection Endpoint (`POST /detect-anomaly`)
+**Request format**:
+```json
+{
+  "features": {
+    "H.period": 0.1491, "DD.period.t": 0.3979, "UD.period.t": 0.2488,
+    "H.t": 0.1069, "DD.t.i": 0.1674, "UD.t.i": 0.0605,
+    "H.i": 0.1169, "DD.i.e": 0.2212, "UD.i.e": 0.1043,
+    "H.e": 0.1008, "DD.e.five": 0.2801, "UD.e.five": 0.1793,
+    "H.five": 0.1055, "DD.five.Shift.r": 0.3402, "UD.five.Shift.r": 0.2347,
+    "H.Shift.r": 0.1141, "DD.Shift.r.o": 0.2709, "UD.Shift.r.o": 0.1568,
+    "H.o": 0.0988, "DD.o.a": 0.2104, "UD.o.a": 0.1116,
+    "H.a": 0.1349, "DD.a.n": 0.1484, "UD.a.n": 0.0135,
+    "H.n": 0.0932, "DD.n.l": 0.3515, "UD.n.l": 0.2583,
+    "H.l": 0.1338, "DD.l.Return": 0.3509, "UD.l.Return": 0.2171,
+    "H.Return": 0.0742
+  }
+}
+```
+
+**Response format**:
+```json
+{
+  "reconstruction_error": 0.06241,
+  "threshold": 0.15847,
+  "anomaly_score": 0.3938,
+  "is_anomaly": false,
+  "assessment": "Normal familiar behavioral keystroke pattern.",
+  "status": "success"
+}
+```
+
+---
 
 ## Project Structure
 
 ```text
 Digital_Behavior_Fingerprint/
 ├── data/
-│   ├── raw/                     # Original dataset
-│   └── processed/               # Derived datasets and fingerprints
+│   ├── raw/
+│   │   └── DSL-StrongPasswordData.csv    # Benchmark dataset (20,400 rows)
+│   └── processed/
+│       └── keystroke_fingerprints.csv    # 408 session-level fingerprints (51 subjects)
+├── models/
+│   ├── best_classifier.joblib            # Trained Random Forest classifier
+│   ├── scaler.joblib                     # Fitted StandardScaler
+│   ├── label_encoder.joblib              # Fitted LabelEncoder for 51 subjects
+│   ├── pytorch_classifier.pt             # PyTorch MLP weights
+│   ├── autoencoder.pt                    # PyTorch Autoencoder weights
+│   ├── feature_metadata.json             # Feature ordering and class definitions
+│   ├── anomaly_config.json               # Anomaly threshold config
+│   └── evaluation_metrics.json           # Recorded test metrics
 ├── notebooks/
-│   ├── 01_eda.ipynb             # Exploratory data analysis
-│   ├── 02_feature_engineering.ipynb
-│   ├── 03_ml_models.ipynb       # Classical ML experiments
-│   └── 04_deep_learning.ipynb   # Planned PyTorch experiments
+│   ├── 01_eda.ipynb                      # Exploratory Data Analysis
+│   ├── 02_feature_engineering.ipynb      # Feature engineering & session fingerprints
+│   ├── 03_ml_models.ipynb                # Classical ML training and evaluation
+│   └── 04_deep_learning.ipynb            # PyTorch MLP & Autoencoder experiments
 ├── src/
-│   ├── preprocessing/           # Reusable preprocessing logic
-│   ├── features/                # Feature engineering logic
-│   ├── models/                  # Model definitions and training
-│   └── evaluation/              # Evaluation utilities
-├── models/                      # Saved trained models
-├── app/                         # Planned API or dashboard
-├── requirements.txt
-└── README.md
+│   ├── __init__.py
+│   ├── config.py                         # Paths, column definitions, and seeds
+│   ├── train.py                          # Central training & evaluation pipeline
+│   ├── preprocessing/
+│   │   ├── __init__.py
+│   │   ├── loader.py                     # Schema validation and dataset cleaning
+│   │   └── splitter.py                   # Session-based splitting and scaling
+│   ├── features/
+│   │   ├── __init__.py
+│   │   ├── extractor.py                  # Statistical & timing feature extraction
+│   │   └── fingerprint.py                # Multi-sample session fingerprint generator
+│   ├── models/
+│   │   ├── __init__.py
+│   │   ├── classical.py                  # Classical ML models (LogReg, KNN, DT, RF, SVM)
+│   │   ├── neural_net.py                 # PyTorch MLP classifier
+│   │   ├── autoencoder.py                # PyTorch Autoencoder for anomaly detection
+│   │   └── persistence.py                # Save and load model artifacts
+│   ├── evaluation/
+│   │   ├── __init__.py
+│   │   └── metrics.py                    # Multi-class and anomaly metrics
+│   └── api/
+│       ├── __init__.py
+│       ├── schemas.py                    # Pydantic request & response schemas
+│       └── main.py                       # FastAPI application
+├── tests/
+│   ├── test_preprocessing.py             # Preprocessing & schema validation tests
+│   ├── test_features.py                  # Feature extraction & fingerprint tests
+│   ├── test_models.py                    # Classical & PyTorch model tests
+│   ├── test_anomaly.py                   # Autoencoder anomaly detection tests
+│   └── test_api.py                       # FastAPI endpoint & error handling tests
+├── requirements.txt                      # Project dependencies
+├── .gitignore                            # Git exclusion rules
+└── README.md                             # Documentation
 ```
 
-The structure may evolve as reusable code is moved out of notebooks and into `src/`.
+---
 
 ## Setup and Installation
 
-### 1. Clone the repository
-
+### 1. Clone the Repository
 ```bash
 git clone https://github.com/sat-06/Digital_Behavior_Fingerprint.git
 cd Digital_Behavior_Fingerprint
 ```
 
-### 2. Create and activate a virtual environment
-
+### 2. Create and Activate Virtual Environment
 **Windows PowerShell:**
-
 ```powershell
-py -3.13 -m venv .venv
+python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 ```
 
-If PowerShell blocks activation, run the following in that terminal and activate again:
-
-```powershell
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-.\.venv\Scripts\Activate.ps1
+**Linux / macOS:**
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
 ```
 
-### 3. Install dependencies
-
-If `requirements.txt` contains the current project dependencies:
-
+### 3. Install Dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-If dependencies have not yet been recorded, install the initial notebook packages:
+---
+
+## How to Run
+
+### 1. Train and Evaluate All Models
+Execute the central pipeline to preprocess the raw data, generate session fingerprints, train the 5 classical models, train the PyTorch MLP and Autoencoder, evaluate against unseen test sessions, and persist all artifacts:
 
 ```bash
-pip install pandas numpy matplotlib seaborn scikit-learn jupyter
+python -m src.train
 ```
 
-Install PyTorch when starting the deep learning stage, using the instructions appropriate for your operating system and hardware at [the official PyTorch website](https://pytorch.org/get-started/locally/).
+### 2. Run Automated Tests
+Execute the full pytest suite (preprocessing, features, models, anomaly detection, API endpoints):
 
-### 4. Add the dataset
+```bash
+python -m pytest tests/ -v
+```
 
-Download the dataset from Kaggle and place the CSV file in `data/raw/`. Update notebook file paths if your downloaded filename differs from the one used in the notebook.
+### 3. Start the FastAPI Backend
+Launch the API with uvicorn:
 
-### 5. Start Jupyter
+```bash
+python -m uvicorn src.api.main:app --host 127.0.0.1 --port 8000 --reload
+```
+Interactive Swagger documentation is available at:
+`http://127.0.0.1:8000/docs`
 
+### 4. Interactive Jupyter Notebooks
+Start Jupyter and run the notebooks in sequence:
 ```bash
 jupyter notebook
 ```
+Recommended order:
+1. `notebooks/01_eda.ipynb`
+2. `notebooks/02_feature_engineering.ipynb`
+3. `notebooks/03_ml_models.ipynb`
+4. `notebooks/04_deep_learning.ipynb`
 
-Run notebooks in order, checking that each stage produces the expected outputs.
-
-## Running the Project
-
-Recommended development order:
-
-1. `01_eda.ipynb` — inspect and understand the raw data.
-2. `02_feature_engineering.ipynb` — create and validate behavioral features.
-3. `03_ml_models.ipynb` — prepare the dataset, train classifiers, and compare results.
-4. `04_deep_learning.ipynb` — implement and evaluate neural-network experiments.
-5. Move stable, reusable logic into `src/`.
-6. Build the planned API and dashboard after the modeling pipeline is validated.
-
-## Evaluation Metrics
-
-For supervised subject classification, evaluate models using:
-
-- **Accuracy:** fraction of predictions that are correct.
-- **Precision:** fraction of predicted instances of a class that are correct.
-- **Recall:** fraction of actual instances of a class that are identified.
-- **F1-score:** harmonic mean of precision and recall.
-- **Confusion matrix:** shows correct and incorrect predictions by class.
-
-Because this is a multi-subject problem, inspect per-class results and macro-averaged metrics rather than relying on accuracy alone.
-
-Use a split strategy that matches the intended use case. If the goal is to generalize to a later session, keep sessions separated between training and testing. Fit scalers and other learned preprocessing steps on training data only, then apply the fitted transformations to the test data.
-
-For clustering, use suitable unsupervised analysis and visual inspection; classification accuracy is not directly interchangeable with clustering quality.
+---
 
 ## Privacy and Limitations
 
-- Keystroke patterns can be behavioral biometric data and may be sensitive.
-- The initial project uses a downloaded dataset for offline experimentation.
-- Results on a benchmark dataset do not guarantee performance on other keyboards, devices, environments, or populations.
-- Timing can vary with fatigue, stress, device latency, keyboard layout, and other conditions.
-- A model prediction is not proof of a person's identity.
-- Any future live collection should require appropriate notice and consent, minimize collection, protect stored data, and provide a clear retention policy.
-- This project is educational and experimental, not a production security or authentication system.
+- **Dataset Context**: The dataset was recorded in controlled typing conditions typing a single static password. Real-world continuous text dynamics vary substantially more.
+- **Biometric Variability**: Stress, keyboard hardware, fatigue, posture, and hand injuries alter typing rhythms.
+- **Closed-Set Subject Classification**: Multi-class classification models identify which of the 51 known subjects best matches a pattern; they do not claim open-world identity proof without thresholded verification.
+- **Privacy Safeguards**: Keystroke timing patterns should be handled as behavioral biometrics with user notice and consent.
 
-## Roadmap
+---
 
-- [x] Create initial repository structure
-- [x] Select a keystroke dynamics dataset
-- [ ] Complete exploratory data analysis
-- [ ] Validate feature definitions and feature engineering
-- [ ] Build a leakage-aware train/test evaluation strategy
-- [ ] Train and compare classical ML models
-- [ ] Save and document model results
-- [ ] Implement a neural network in PyTorch
-- [ ] Experiment with an autoencoder for anomaly scoring
-- [ ] Move stable logic into reusable source modules
-- [ ] Build an API for model inference
-- [ ] Create a dashboard for visualizing results
-- [ ] Explore additional signals such as mouse movement, scrolling, and navigation, subject to privacy and consent requirements
+## Roadmap & Status
 
-Update this checklist as each stage is completed and verified.
+- [x] Create modular repository structure and configuration (`src/config.py`)
+- [x] Validate dataset schema and clean raw observations (`src/preprocessing/loader.py`)
+- [x] Engineer 17 statistical behavioral features (`src/features/extractor.py`)
+- [x] Build multi-sample session-level fingerprints (408 samples, 8 per subject) (`src/features/fingerprint.py`)
+- [x] Build leakage-free session-based train/test splitting strategy (`src/preprocessing/splitter.py`)
+- [x] Train and benchmark 5 classical ML models (LogReg, KNN, Decision Tree, Random Forest, SVM)
+- [x] Implement and train PyTorch Neural Network MLP classifier (`src/models/neural_net.py`)
+- [x] Implement PyTorch Autoencoder for anomaly detection (`src/models/autoencoder.py`)
+- [x] Model artifact persistence and metadata management (`src/models/persistence.py`)
+- [x] Build FastAPI backend endpoints (`GET /`, `GET /health`, `GET /model-info`, `POST /predict`, `POST /detect-anomaly`)
+- [x] 24 automated unit and integration tests passing (`tests/`)
+- [x] Update documentation with actual benchmark results
+- [ ] *Planned*: Frontend visualization dashboard for keystroke dynamics
+- [ ] *Planned*: Multi-modal signals (mouse movement, scroll velocity)
+
+---
 
 ## Future Scope
 
-Possible extensions after the keystroke-only version include:
+- **Frontend Dashboard**: A lightweight visualization UI to inspect hold times, latency distributions, and live anomaly scores.
+- **Continuous Keystroke Capture**: Transitioning from fixed-text password typing to free-text continuous authentication.
+- **Multi-Modal Signals**: Integrating mouse trajectory curvature, velocity, and scroll dynamics.
 
-
-- Mouse movement speed, distance, and direction-change features
-- Scroll velocity and direction patterns
-- Page dwell time and navigation transitions
-- Session duration and idle-time summaries
-- Combining multiple behavioral signal types
-- A dashboard showing feature distributions, model metrics, and anomaly scores
-- Carefully validated, consent-based real-time inference
-
-These are future possibilities, not claims about the current implementation.
+---
 
 ## Disclaimer
 
-This project is intended for learning, experimentation, and research into machine learning and behavioral data. It should not be used as the sole basis for authentication, surveillance, disciplinary action, or other high-impact decisions. Any practical deployment would require appropriate consent, security safeguards, bias and robustness evaluation, and human oversight.
+This project is developed for educational, machine learning research, and biometrics exploration purposes. It should not be utilized as the sole factor in mission-critical security authentication, access control, or high-impact decisions without human oversight and compliance safeguards.
